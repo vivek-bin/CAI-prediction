@@ -1,0 +1,11 @@
+Functionality incorrectly implemented
+Design not detailed
+Assumption not correct
+Impact Analysis not done properly / Incorrect
+Incorrect Logical implementation
+Regression of another bug fix
+Functionality Incorrectly implemented
+Functional requirements incomplete
+Incomplete / Improper Unit Testing
+Incomplete coding of functional requirements
+Coding guidelines / Standards not followed
