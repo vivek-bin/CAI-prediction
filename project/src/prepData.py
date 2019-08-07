@@ -1,14 +1,15 @@
 import random
 import pandas
+import re
 
 import constants as CONST
 
 
 def loadData():
-	file = pandas.ExcelFile(CONST.INPUTEXCEL).parse("input")
+	file = pandas.ExcelFile(CONST.DATAPATH + "input.xlsx").parse("input")
 	
 	for col in ["Category","Type","Stage of defect injection","Defect category"]:
-		with open(col+"Map.txt","r") as iFile:
+		with open(CONST.ENCODINGS + col +"Map.txt","r") as iFile:
 			unique = iFile.readlines()
 		
 		uniqueDict = {val.strip():i+1 for i,val in enumerate(unique)}
@@ -17,7 +18,7 @@ def loadData():
 			file[col][i] = uniqueDict[val]
 			
 	wordDict = {}
-	with open("WordMap.txt","r") as iFile:
+	with open(CONST.ENCODINGS + "WordMap.txt","r") as iFile:
 		wordList = iFile.readlines()
 		wordDict = {val.strip():i+1 for i,val in enumerate(wordList)}
 	
@@ -31,8 +32,9 @@ def loadData():
 					file[col][i][j] = 0
 	
 	file["Input Text"] = [s+d for s,d in zip(file["Summary"],file["Description"])]
+	file["Input Text"] = [[v for v in rec if v]+[0] for rec in file["Input Text"]]
 	
-	
+	print(file["Input Text"][0])
 	
 	
 	vecRecords = list(zip(file["Category"],file["Type"],file["Stage of defect injection"],file["Defect category"],file["Input Text"]))
@@ -45,12 +47,13 @@ def loadData():
 	
 	return x,y1,y2
 	
-def generateMapping():
-	file = pandas.ExcelFile(CONST.INPUTEXCEL).parse("input")
 	
-	for col in ["Category","Type","Stage of defect injection","Defect category"]:
+def generateMapping():
+	file = pandas.ExcelFile(CONST.DATAPATH + "input.xlsx").parse("input")
+	
+	for col in ["Category", "Type", "Stage of defect injection", "Defect category"]:
 		unique = set(file[col])
-		with open(col+"Map.txt","w") as oFile:
+		with open(CONST.ENCODINGS + col+"Map.txt","w") as oFile:
 			oFile.writelines("\n".join(unique))
 	
 	
@@ -61,7 +64,7 @@ def generateMapping():
 	
 	
 	filteredWords = wordFrequency(file,allWords)
-	with open("WordMap.txt","w") as oFile:
+	with open(CONST.ENCODINGS + "WordMap.txt","w") as oFile:
 		oFile.writelines("\n".join(filteredWords))
 
 	
@@ -69,7 +72,8 @@ def generateMapping():
 	
 def cleanColumnText(file, colName):
 	for i,val in enumerate(file[colName]):
-		file[colName][i] = cleanStr(val).split()
+		# file[colName][i] = cleanStr(val).split()
+		file[colName][i] = re.split(r"\W", cleanStr(val))
 	
 def getUniqueWords(col):
 	allWords = set()
@@ -83,16 +87,16 @@ def cleanStr(inputStr):
 	strList = list(inputStr)
 	
 	toSpace = "+*/$&;:.,!?'\"#(){}[]_=<>\\\u201c\\i201c\u2018\u2019"
-	toN = "0123456789"
 	toRemove = "-"
+	toN = "0123456789"
 	
 	for i,ch in enumerate(strList):
-		if ch in toSpace:
-			strList[i] = " "
-		if ch in toN:
-			strList[i] = "N"
+		# if ch in toSpace:
+		# 	strList[i] = " "
 		if ch in toRemove:
 			strList[i] = ""
+		if ch in toN:
+			strList[i] = "N"
 	
 	ouputLine = "".join(strList)
 	
@@ -108,7 +112,7 @@ def wordFrequency(file,allWords):
 					wordFreq[word] = wordFreq[word] + 1 
 	
 	#ignore words that are too rare or too common
-	wordList = [k for k,v in wordFreq.items() if v > 5 and v < 200]
+	wordList = [k for k,v in wordFreq.items() if v > CONST.MIN_VOCAB_FREQ and v < CONST.MAX_VOCAB_FREQ]
 	
 	return sorted(wordList)
 	
